@@ -35,7 +35,7 @@ class ChickenJumpActivity : AppCompatActivity() {
                 binding.chickenView.moveCamera(-20f, 0f)
             }
             binding.right.setOnClickListener {
-                binding.chickenView.moveCamera(20f, 0f)
+                binding.chickenView.moveCamera(50f, 0f)
             }
 
             binding.chickenView.setOnClickListener {

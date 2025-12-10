@@ -13,6 +13,7 @@ import androidx.core.graphics.withMatrix
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
+import kotlin.random.Random
 
 class ChickenView @JvmOverloads constructor(
     context: Context,
@@ -34,8 +35,8 @@ class ChickenView @JvmOverloads constructor(
     //camera vision
     private var cameraX = 0f
     private var cameraY = 0f
-    private var scaleCamX = 0.3f
-    private var scaleCamY = 0.3f
+    private var scaleCamX = 1f
+    private var scaleCamY = 1f
 
     //view
     private var widthView = 0f
@@ -53,13 +54,13 @@ class ChickenView @JvmOverloads constructor(
         Paint().apply { style = Paint.Style.FILL; color = Color.BLUE; isAntiAlias = true }
     private var rectLand2: RectF = RectF(0f, 0f, 25f.toPx(), 1200f.toPx())
     private var matrixLand2 = Matrix().apply {
-        postRotate(-15f)
-        postTranslate(rectLand1.width(), rectLand1.bottom)
+        postRotate(-10f)
+        postTranslate(rectLand1.width() - 15f.toPx(), rectLand1.bottom)
     }
 
     //land 3
     private val paintLand3 = paintLand2
-    private var rectLand3 : RectF = RectF(rectLand1.right + 250f.toPx(), rectLand1.bottom, rectLand1.right + 250f.toPx() + 25f.toPx(), rectLand1.bottom + 1200f.toPx())
+    private var rectLand3 : RectF = RectF(rectLand1.right + 325f.toPx(), rectLand1.bottom, rectLand1.right + 325f.toPx() + 25f.toPx(), rectLand1.bottom + 1200f.toPx())
 
     //land 4
     private val paintLand4 =
@@ -71,10 +72,10 @@ class ChickenView @JvmOverloads constructor(
         color = Color.GREEN
         style = Paint.Style.FILL
     }
-    private val radiusChicken = 20f.toPx()
+    private val radiusChicken = 30f.toPx()
     private var chickenX : Float = radiusChicken
     private var chickenY : Float = rectLand1.top - radiusChicken
-    private var deltaX : Float = 10f
+    private var deltaX : Float = 2f.toPx()
     private var deltaY : Float = 0f
 
 
@@ -89,6 +90,7 @@ class ChickenView @JvmOverloads constructor(
         super.onSizeChanged(w, h, oldw, oldh)
         visibleViewWidth = w.toFloat()
         visibleViewHeight = h.toFloat()
+        Log.d(TAG, "onSizeChanged: $visibleViewWidth $visibleViewHeight")
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -122,63 +124,75 @@ class ChickenView @JvmOverloads constructor(
         chickenX += deltaX
         chickenY += deltaY
 
-        if(deltaX > 0f) deltaX -= 0.03f
-        deltaY += 0.2f
+        if(deltaX > 0f) deltaX -= 0.001f.toPx()
+        deltaY += 0.05f.toPx()
 
         //touch land 1
-//        Log.d(TAG, "isTouchLand1: ${isTouchingLand1()}")
-        if (isTouchingLand1() && deltaY > 0) {
+        if (isTouchingNoMatrix(chickenX, chickenY, rectLand1) && deltaY > 0) {
             chickenY = rectLand1.top - radiusChicken
             deltaY = 0f
         } else {
-            deltaY += 0.2f
+            deltaY += 0.05f.toPx()
         }
 
-        Log.d(TAG, "isTouchingLand2 : ${isTouchingLand2()}")
-        if(isTouchingLand2()) {
+        //touch land 2 & 3
+        if(isTouchingLand2() || isTouchingNoMatrix(chickenX, chickenY, rectLand3)) {
+            deltaX = 0f
+            deltaY = 0f
+            return
         }
 
+        //touch land 4
+        if(isTouchingNoMatrix(chickenX, chickenY, rectLand4)){
+            chickenY = rectLand4.top - radiusChicken
+            deltaX = 0f
+            deltaY = 0f
+            return
+        }
+
+        updateCameraVision()
         invalidate()
+    }
+
+    fun updateCameraVision(){
+        val targetCameraX = chickenX - ((visibleViewWidth / scaleCamX) / 2f)
+        val targetCameraY = chickenY - ((visibleViewHeight / scaleCamY) / 2f)
+
+        val lerpFactor = 0.1f
+        cameraX += (targetCameraX - cameraX) * lerpFactor
+        cameraY += (targetCameraY - cameraY) * lerpFactor
+
+        cameraX = cameraX.coerceIn(0f, widthView - visibleViewWidth / scaleCamX)
+        cameraY = cameraY.coerceIn(0f, heightView - visibleViewHeight / scaleCamY)
     }
 
     fun moveCamera(xDp: Float, yDp : Float) {
         val newCameraX = cameraX + xDp.toPx()
         val newCameraY = cameraY + yDp.toPx()
-        cameraX = newCameraX.coerceIn(0f, widthView - visibleViewWidth)
-        cameraY = newCameraY.coerceIn(0f, heightView - visibleViewHeight)
+        cameraX = newCameraX.coerceIn(0f, widthView - visibleViewWidth / scaleCamX)
+        cameraY = newCameraY.coerceIn(0f, heightView - visibleViewHeight / scaleCamY)
         invalidate()
-    }
-
-    private fun isTouchingLand1(): Boolean {
-        val closestX = max(rectLand1.left, min(chickenX, rectLand1.right))
-        val closestY = max(rectLand1.top, min(chickenY, rectLand1.bottom))
-
-        val distanceX = chickenX - closestX
-        val distanceY = chickenY - closestY
-
-        val distanceSquared = distanceX.pow(2) + distanceY.pow(2)
-        return distanceSquared < radiusChicken.pow(2)
     }
 
     private fun isTouchingLand2(): Boolean {
         val invertedMatrix = Matrix()
-
-        if (!matrixLand2.invert(invertedMatrix)) {
-            return false
-        }
-
         val chickenCoordinates = floatArrayOf(chickenX, chickenY)
 
+        matrixLand2.invert(invertedMatrix)
         invertedMatrix.mapPoints(chickenCoordinates)
 
         val chickenXConvert = chickenCoordinates[0]
         val chickenYConvert = chickenCoordinates[1]
 
-        val closestX = max(rectLand2.left, min(chickenXConvert, rectLand2.right))
-        val closestY = max(rectLand2.top, min(chickenYConvert, rectLand2.bottom))
+        return isTouchingNoMatrix(chickenXConvert, chickenYConvert, rectLand2)
+    }
 
-        val distanceX = chickenXConvert - closestX
-        val distanceY = chickenYConvert - closestY
+    private fun isTouchingNoMatrix(chickenX : Float, chickenY : Float, rectLand : RectF): Boolean {
+        val closestX = max(rectLand.left, min(chickenX, rectLand.right))
+        val closestY = max(rectLand.top, min(chickenY, rectLand.bottom))
+
+        val distanceX = chickenX - closestX
+        val distanceY = chickenY - closestY
 
         val distanceSquared = distanceX.pow(2) + distanceY.pow(2)
         return distanceSquared < radiusChicken.pow(2)
@@ -189,7 +203,11 @@ class ChickenView @JvmOverloads constructor(
     }
 
     fun jump() {
-        deltaY -= 15f
+        deltaY -= (3f + Random.nextInt(1,3).toFloat()).toPx()
         invalidate()
+    }
+
+    fun resetGame() {
+
     }
 }
