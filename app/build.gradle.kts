@@ -41,7 +41,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.gpuimage)
+//    implementation(libs.gpuimage)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
