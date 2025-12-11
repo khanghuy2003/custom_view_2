@@ -20,6 +20,11 @@ class ChickenView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : View(context, attrs)  {
 
+    interface GameListener{
+        fun onWin()
+        fun onLose()
+    }
+
     companion object{
         private const val TAG = "TAGChickenView"
     }
@@ -39,6 +44,8 @@ class ChickenView @JvmOverloads constructor(
     private var scaleCamY = 1f
 
     //view
+    private var listener : GameListener? = null
+    private var isJumping = false
     private var widthView = 0f
     private var heightView = 0f
     private var visibleViewWidth = 0f
@@ -129,8 +136,13 @@ class ChickenView @JvmOverloads constructor(
 
         //touch land 1
         if (isTouchingNoMatrix(chickenX, chickenY, rectLand1) && deltaY > 0) {
-            chickenY = rectLand1.top - radiusChicken
-            deltaY = 0f
+            if(isJumping){
+                chickenY = rectLand1.top - radiusChicken
+                deltaY -= 4f.toPx()
+            } else {
+                chickenY = rectLand1.top - radiusChicken
+                deltaY = 0f
+            }
         } else {
             deltaY += 0.05f.toPx()
         }
@@ -139,6 +151,7 @@ class ChickenView @JvmOverloads constructor(
         if(isTouchingLand2() || isTouchingNoMatrix(chickenX, chickenY, rectLand3)) {
             deltaX = 0f
             deltaY = 0f
+            listener?.onLose()
             return
         }
 
@@ -147,6 +160,7 @@ class ChickenView @JvmOverloads constructor(
             chickenY = rectLand4.top - radiusChicken
             deltaX = 0f
             deltaY = 0f
+            listener?.onWin()
             return
         }
 
@@ -203,11 +217,25 @@ class ChickenView @JvmOverloads constructor(
     }
 
     fun jump() {
-        deltaY -= (3f + Random.nextInt(1,3).toFloat()).toPx()
-        invalidate()
+        if(!isJumping){
+            val deltaYdp = (3f + Random.nextInt(1,4).toFloat())
+            deltaY -= deltaYdp.toPx()
+            isJumping = true
+            Log.d("TAG_JUMP", "jump: ${deltaYdp}")
+            invalidate()
+        }
     }
 
     fun resetGame() {
+        isJumping = false
+        chickenX = radiusChicken
+        chickenY = rectLand1.top - radiusChicken
+        deltaX = 2f.toPx()
+        deltaY = 0f
+        invalidate()
+    }
 
+    fun setGameListener(l : GameListener){
+        this.listener = l
     }
 }

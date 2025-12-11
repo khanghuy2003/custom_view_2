@@ -5,11 +5,12 @@ import android.view.LayoutInflater
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.test.time.testchristmasgame.databinding.ActivityChickenJumpBinding
+import com.test.time.testchristmasgame.view.ChickenView
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class ChickenJumpActivity : AppCompatActivity() {
+class ChickenJumpActivity : AppCompatActivity(), ChickenView.GameListener {
 
     private val binding: ActivityChickenJumpBinding by lazy {
         ActivityChickenJumpBinding.inflate(
@@ -35,12 +36,18 @@ class ChickenJumpActivity : AppCompatActivity() {
                 binding.chickenView.moveCamera(-20f, 0f)
             }
             binding.right.setOnClickListener {
-                binding.chickenView.moveCamera(50f, 0f)
+                binding.chickenView.moveCamera(20f, 0f)
+            }
+
+            binding.newGame.setOnClickListener {
+                binding.chickenView.resetGame()
             }
 
             binding.chickenView.setOnClickListener {
                 binding.chickenView.jump()
             }
+
+            binding.chickenView.setGameListener(this)
 
             job?.cancel()
             job = null
@@ -63,5 +70,13 @@ class ChickenJumpActivity : AppCompatActivity() {
         super.onStop()
         job?.cancel()
         job = null
+    }
+
+    override fun onWin() {
+
+    }
+
+    override fun onLose() {
+
     }
 }

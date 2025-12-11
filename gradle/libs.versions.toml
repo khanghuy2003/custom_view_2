@@ -1,6 +1,5 @@
 [versions]
 agp = "8.13.1"
-gpuimage = "2.1.0"
 kotlin = "2.0.21"
 coreKtx = "1.17.0"
 junit = "4.14-SNAPSHOT"
@@ -15,7 +14,6 @@ navigationUiKtx = "2.9.6"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-gpuimage = { module = "jp.co.cyberagent.android:gpuimage", version.ref = "gpuimage" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
